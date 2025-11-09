@@ -82,6 +82,6 @@ public class WeatherRecord {
     }
 
     public boolean isHeatDay(double threshold) {
-        return heatIndex() >= threshold;
-    }
+		return heatIndex() >= threshold;
+	}
 }
