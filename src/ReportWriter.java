@@ -26,7 +26,7 @@ import java.nio.file.*;
 
 public class ReportWriter
 {
-	public void write(Path out, HeatSummary s, int year, int month, double threshold, boolean usePercentile) throws IOException
+	public void write(Path out, HeatSummary s, int year, int month, double threshold) throws IOException
 	{
 		try (BufferedWriter bw = Files.newBufferedWriter(out))
 		{

@@ -35,7 +35,7 @@ public class Main
 		int year = 2025, month = 10;
 		double threshold = 95.0; // Heat Index threshold
 		List<WeatherRecord> days = analyzer.filter(year, month);
-		HeatSummary s = analyzer.summarize(days, threshold, false);
+		HeatSummary s = analyzer.summarize(days, threshold);
 
 		System.out.println("Loaded records: " + dataSet.all().size() + " (skipped: " + dataSet.getSkippedRowCount() + ")");
 		System.out.println("Filtered days: " + days.size());
@@ -46,7 +46,7 @@ public class Main
 		System.out.println();
 		
 		Path report = Path.of("summary.txt");
-        new ReportWriter().write(report, s, year, month, threshold, true);
+        new ReportWriter().write(report, s, year, month, threshold);
         System.out.println("Summary written to " + report.toAbsolutePath());
         System.out.println("Rows prepared: " + s.tableRows.size());
 	}

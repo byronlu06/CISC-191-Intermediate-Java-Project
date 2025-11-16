@@ -25,7 +25,6 @@
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -52,9 +51,9 @@ public class HeatRiskAnalyzer
 	}
 	
 	// Filter and summarize in one call
-	public HeatSummary summarizeFor(int year, int month, double threshold, boolean usePercentile) {
+	public HeatSummary summarizeFor(int year, int month, double threshold) {
         List<WeatherRecord> days = filter(year, month);
-        HeatSummary s = summarize(days, threshold, usePercentile);
+        HeatSummary s = summarize(days, threshold);
         prepareRows(days, threshold, s);
         return s;
     }
@@ -64,8 +63,7 @@ public class HeatRiskAnalyzer
 	 */
 	public List<WeatherRecord> filter(int year, int month)
 	{
-		return dataSet.filter(r -> r.getDate().getYear() == year
-				&& r.getDate().getMonthValue() == month);
+		return dataSet.filter(r -> r.getDate().getYear() == year && r.getDate().getMonthValue() == month);
 	}
 	
 	// Fill the heat summary table rows for GUI reports
@@ -89,8 +87,7 @@ public class HeatRiskAnalyzer
 	 * @param threshold     Heat Index threshold for a "heat day"
 	 * @param usePercentile if true, also compute p90 values
 	 */
-	public HeatSummary summarize(List<WeatherRecord> dayList, double threshold,
-			boolean usePercentile)
+	public HeatSummary summarize(List<WeatherRecord> dayList, double threshold)
 	{
 
 		HeatSummary summary = new HeatSummary();
