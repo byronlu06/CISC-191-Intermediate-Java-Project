@@ -16,9 +16,12 @@
  */
 
 /**
- * Purpose: The reponsibility of HeatRiskGUI is to provide a graphical user interface for users to see results
- * It lets the user load a csv file, choose a year and month, and view the daily results in a table
- * HeatRiskGUI is the main GUi that uses DataSet, HeatRiskAnalyzer, HeatSummary, and ReportWriter to run the analysis and show the results
+ * Purpose: The reponsibility of HeatRiskGUI is to provide a graphical user
+ * interface for users to see results
+ * It lets the user load a csv file, choose a year and month, and view the daily
+ * results in a table
+ * HeatRiskGUI is the main GUi that uses DataSet, HeatRiskAnalyzer, HeatSummary,
+ * and ReportWriter to run the analysis and show the results
  * 
  */
 import javax.swing.*;
@@ -49,20 +52,23 @@ public class HeatRiskGUI extends JFrame
 	private JButton loadCsvButton = new JButton("Load CSV");
 	private JButton exportButton = new JButton("Export");
 
-	public HeatRiskGUI() {
-            super("Heat Risk Analyzer");
-            setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            setSize(900, 600);
-            setLocationRelativeTo(null);
+	public HeatRiskGUI()
+	{
+		super("Heat Risk Analyzer");
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setSize(900, 600);
+		setLocationRelativeTo(null);
 
-            setLayout(new BorderLayout());
-            add(buildFiltersPanel(), BorderLayout.WEST);
-            add(buildResultsPanel(), BorderLayout.CENTER);
+		thresholdField.setText("95");
 
-            hookUpActions();
-        }
+		setLayout(new BorderLayout());
+		add(buildFiltersPanel(), BorderLayout.WEST);
+		add(buildResultsPanel(), BorderLayout.CENTER);
 
-	// Left panel: filters 
+		hookUpActions();
+	}
+
+	// Left panel: filters
 
 	private JPanel buildFiltersPanel()
 	{
@@ -72,9 +78,10 @@ public class HeatRiskGUI extends JFrame
 		panel.setLayout(new GridBagLayout());
 
 		GridBagConstraints gbc = new GridBagConstraints();
-		gbc.insets = new Insets(8, 8, 8, 8);
-		gbc.anchor = GridBagConstraints.WEST;
+		gbc.insets = new Insets(10, 10, 10, 10);
+		gbc.anchor = GridBagConstraints.NORTHWEST;
 		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.weightx = 1;
 		gbc.gridx = 0;
 		gbc.gridy = 0;
 
@@ -85,6 +92,10 @@ public class HeatRiskGUI extends JFrame
 		gbc.gridx = 0;
 		gbc.gridwidth = 2;
 		panel.add(applyButton, gbc);
+
+		gbc.gridy++;
+		gbc.weighty = 1;
+		panel.add(Box.createVerticalGlue(), gbc);
 
 		return panel;
 	}
@@ -99,7 +110,7 @@ public class HeatRiskGUI extends JFrame
 		gbc.gridy++;
 	}
 
-	// Right panel: results 
+	// Right panel: results
 
 	private JPanel buildResultsPanel()
 	{
@@ -133,7 +144,7 @@ public class HeatRiskGUI extends JFrame
 		return panel;
 	}
 
-	// Button actions 
+	// Button actions
 
 	private void hookUpActions()
 	{
@@ -189,6 +200,11 @@ public class HeatRiskGUI extends JFrame
 			int month = Integer.parseInt(monthField.getText().trim());
 			double threshold = Double
 					.parseDouble(thresholdField.getText().trim());
+			
+			if (month < 1 || month > 12) {
+				JOptionPane.showMessageDialog(this, "Month must be between 1 and 12.");
+				return;
+			}
 
 			HeatSummary summary = analyzer.summarizeFor(year, month, threshold);
 
@@ -250,7 +266,6 @@ public class HeatRiskGUI extends JFrame
 					JOptionPane.ERROR_MESSAGE);
 		}
 	}
-
 
 	public static void main(String[] args)
 	{
