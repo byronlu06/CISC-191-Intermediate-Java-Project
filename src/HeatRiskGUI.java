@@ -191,41 +191,51 @@ public class HeatRiskGUI extends JFrame
 		if (dataSet == null || analyzer == null)
 		{
 			JOptionPane.showMessageDialog(this, "Please load a CSV first.");
-			return;
+	        return;
 		}
 
-		try
-		{
-			int year = Integer.parseInt(yearField.getText().trim());
-			int month = Integer.parseInt(monthField.getText().trim());
-			double threshold = Double
-					.parseDouble(thresholdField.getText().trim());
-			
-			if (month < 1 || month > 12) {
-				JOptionPane.showMessageDialog(this, "Month must be between 1 and 12.");
-				return;
-			}
+		String yText = yearField.getText().trim();
+	    String mText = monthField.getText().trim();
+	    String tText = thresholdField.getText().trim();
+	    
+	    if (yText.isEmpty() || mText.isEmpty() || tText.isEmpty()) {
+	        JOptionPane.showMessageDialog(this,
+	                "Please fill in Year, Month, and Threshold.");
+	        return;
+	    }
+		
+	    try {
+	        int year = Integer.parseInt(yText);
+	        int month = Integer.parseInt(mText);
+	        double threshold = Double.parseDouble(tText);
+
+	        if (month < 1 || month > 12) {
+	            JOptionPane.showMessageDialog(this,
+	                    "Month must be between 1 and 12.");
+	            return;
+	        }
 
 			HeatSummary summary = analyzer.summarizeFor(year, month, threshold);
 
 			tableModel.setRowCount(0);
-			for (String[] row : summary.tableRows)
-			{
-				tableModel.addRow(row);
-			}
+	        for (String[] row : summary.tableRows) {
+	            tableModel.addRow(row);
+	        }
 
-			summaryLabel.setText(String.format(
-					"Days: %d | Heat days: %d | Avg HI: %.1f | Max HI: %.1f | Longest streak: %d",
-					summary.totalDays, summary.heatDayCount,
-					summary.averageHeatIndex, summary.maxHeatIndex,
-					summary.longestStreak));
+	        summaryLabel.setText(String.format(
+	                "Year %d, Month %d, Threshold %.1f | Days: %d, Heat days: %d, "
+	                        + "Avg HI: %.1f, Max HI: %.1f, Longest streak: %d "
+	                        + "| Skipped rows in file: %d",
+	                year, month, threshold,
+	                summary.totalDays, summary.heatDayCount,
+	                summary.averageHeatIndex, summary.maxHeatIndex,
+	                summary.longestStreak,
+	                dataSet.getSkippedRowCount()));
 
 		}
-		catch (NumberFormatException ex)
-		{
-			JOptionPane.showMessageDialog(this,
-					"Please enter valid numbers for year, month, and threshold.");
-		}
+	    catch (NumberFormatException ex) {
+	        JOptionPane.showMessageDialog(this, "Year, Month, and Threshold must be valid numbers.");
+	    }
 	}
 
 	private void onExport(ActionEvent e)
@@ -235,36 +245,51 @@ public class HeatRiskGUI extends JFrame
 			JOptionPane.showMessageDialog(this, "Nothing to export yet.");
 			return;
 		}
+		
+		String yText = yearField.getText().trim();
+	    String mText = monthField.getText().trim();
+	    String tText = thresholdField.getText().trim();
+	    
+	    if (yText.isEmpty() || mText.isEmpty() || tText.isEmpty()) {
+	        JOptionPane.showMessageDialog(this,
+	                "Please fill in Year, Month, and Threshold before exporting.");
+	        return;
+	    }
 
-		JFileChooser chooser = new JFileChooser();
-		chooser.setSelectedFile(new java.io.File("summary.txt"));
-		int result = chooser.showSaveDialog(this);
-		if (result != JFileChooser.APPROVE_OPTION)
-		{
-			return;
-		}
+	    try {
+	        int year = Integer.parseInt(yText);
+	        int month = Integer.parseInt(mText);
+	        double threshold = Double.parseDouble(tText);
 
-		Path path = chooser.getSelectedFile().toPath();
+	        if (month < 1 || month > 12) {
+	            JOptionPane.showMessageDialog(this,
+	                    "Month must be between 1 and 12.");
+	            return;
+	        }
 
-		try
-		{
-			int year = Integer.parseInt(yearField.getText().trim());
-			int month = Integer.parseInt(monthField.getText().trim());
-			double threshold = Double
-					.parseDouble(thresholdField.getText().trim());
+	        boolean usePercentile = false;
+	        HeatSummary summary =
+	                analyzer.summarizeFor(year, month, threshold);
 
-			HeatSummary summary = analyzer.summarizeFor(year, month, threshold);
+	        JFileChooser chooser = new JFileChooser();
+	        chooser.setSelectedFile(new java.io.File("summary.txt"));
+	        int result = chooser.showSaveDialog(this);
+	        if (result != JFileChooser.APPROVE_OPTION) return;
 
-			new ReportWriter().write(path, summary, year, month, threshold);
-			JOptionPane.showMessageDialog(this,
-					"Exported to: " + path.toAbsolutePath());
-		}
-		catch (Exception ex)
-		{
-			JOptionPane.showMessageDialog(this,
-					"Error exporting: " + ex.getMessage(), "Export Error",
-					JOptionPane.ERROR_MESSAGE);
-		}
+	        Path path = chooser.getSelectedFile().toPath();
+	        new ReportWriter().write(path, summary, year, month, threshold);
+
+	        JOptionPane.showMessageDialog(this,
+	                "Exported to: " + path.toAbsolutePath());
+
+	    } catch (NumberFormatException ex) {
+	        JOptionPane.showMessageDialog(this,
+	                "Year, Month, and Threshold must be valid numbers.");
+	    } catch (Exception ex) {
+	        JOptionPane.showMessageDialog(this,
+	                "Error exporting: " + ex.getMessage(),
+	                "Export Error", JOptionPane.ERROR_MESSAGE);
+	    }
 	}
 
 	public static void main(String[] args)

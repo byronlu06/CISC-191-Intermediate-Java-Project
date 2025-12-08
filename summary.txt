@@ -1,8 +1,8 @@
 Heat Risk Summary
 Year: 2025 Month: 10 Threshold: 95.0
 
-Total Days: 5
-Heat-Day Count: 5
-Average HI: 115.7
-Max HI: 127.1
-Longest Streak: 5
+Total Days: 20
+Heat-Day Count: 20
+Average HI: 120.3
+Max HI: 160.1
+Longest Streak: 20
