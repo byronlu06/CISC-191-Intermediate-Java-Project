@@ -32,20 +32,21 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+// Main GUI window for the Heat Risk Analyzer.
+// Lets the user load a CSV, run analysis, and export a report.
 public class HeatRiskGUI extends JFrame
 {
-
-	// Back-end objects (set after CSV load)
+	// Set after the user loads a CSV
 	private DataSet dataSet;
 	private HeatRiskAnalyzer analyzer;
 
-	// Left side controls
+	// Inputs
 	private JTextField yearField = new JTextField(8);
 	private JTextField monthField = new JTextField(8);
 	private JTextField thresholdField = new JTextField(8);
 	private JButton applyButton = new JButton("Apply / Compute");
 
-	// Right side: table + info + buttons
+	// Output/table area
 	private DefaultTableModel tableModel;
 	private JTable table;
 	private JLabel summaryLabel = new JLabel("No data loaded yet.");
@@ -59,8 +60,10 @@ public class HeatRiskGUI extends JFrame
 		setSize(900, 600);
 		setLocationRelativeTo(null);
 
+		// Default threshold for quick testing
 		thresholdField.setText("95");
 
+		// Layout: left = controls, center = table/results
 		setLayout(new BorderLayout());
 		add(buildFiltersPanel(), BorderLayout.WEST);
 		add(buildResultsPanel(), BorderLayout.CENTER);
@@ -68,8 +71,7 @@ public class HeatRiskGUI extends JFrame
 		hookUpActions();
 	}
 
-	// Left panel: filters
-
+	// Left panel with filters
 	private JPanel buildFiltersPanel()
 	{
 		JPanel panel = new JPanel();
@@ -93,6 +95,7 @@ public class HeatRiskGUI extends JFrame
 		gbc.gridwidth = 2;
 		panel.add(applyButton, gbc);
 
+		// keeps everything pushed to the top
 		gbc.gridy++;
 		gbc.weighty = 1;
 		panel.add(Box.createVerticalGlue(), gbc);
@@ -100,6 +103,7 @@ public class HeatRiskGUI extends JFrame
 		return panel;
 	}
 
+	// Adds a label + input component to the filter panel
 	private void addLabeledField(JPanel panel, GridBagConstraints gbc,
 			String labelText, JComponent field)
 	{
@@ -110,8 +114,7 @@ public class HeatRiskGUI extends JFrame
 		gbc.gridy++;
 	}
 
-	// Right panel: results
-
+	// Right panel with the table + buttons
 	private JPanel buildResultsPanel()
 	{
 		JPanel panel = new JPanel(new BorderLayout());
@@ -119,14 +122,16 @@ public class HeatRiskGUI extends JFrame
 				BorderFactory.createTitledBorder("Results Table / Summary"));
 
 		String[] columns = { "Date", "Tmax", "RH", "HI", "Heat Day?" };
+
 		tableModel = new DefaultTableModel(columns, 0)
 		{
 			@Override
 			public boolean isCellEditable(int row, int column)
 			{
-				return false; // read-only table
+				return false; // user shouldn't edit results
 			}
 		};
+
 		table = new JTable(tableModel);
 		JScrollPane scrollPane = new JScrollPane(table);
 
@@ -144,8 +149,7 @@ public class HeatRiskGUI extends JFrame
 		return panel;
 	}
 
-	// Button actions
-
+	// Connect buttons to handlers
 	private void hookUpActions()
 	{
 		loadCsvButton.addActionListener(this::onLoadCsv);
@@ -153,6 +157,7 @@ public class HeatRiskGUI extends JFrame
 		exportButton.addActionListener(this::onExport);
 	}
 
+	// Load CSV and create DataSet + analyzer
 	private void onLoadCsv(ActionEvent e)
 	{
 		JFileChooser chooser = new JFileChooser();
@@ -163,6 +168,7 @@ public class HeatRiskGUI extends JFrame
 		}
 
 		Path path = chooser.getSelectedFile().toPath();
+
 		try
 		{
 			if (!Files.isRegularFile(path))
@@ -170,13 +176,15 @@ public class HeatRiskGUI extends JFrame
 				JOptionPane.showMessageDialog(this, "Not a file: " + path);
 				return;
 			}
+
 			dataSet = DataSet.loadFromCsv(path);
 			analyzer = new HeatRiskAnalyzer(dataSet);
 
 			summaryLabel.setText(
 					"Loaded " + dataSet.all().size() + " records (skipped: "
 							+ dataSet.getSkippedRowCount() + ")");
-			tableModel.setRowCount(0); // clear table
+
+			tableModel.setRowCount(0);
 		}
 		catch (IOException ex)
 		{
@@ -186,58 +194,64 @@ public class HeatRiskGUI extends JFrame
 		}
 	}
 
+	// Run the analysis and update the table + summary
 	private void onApply(ActionEvent e)
 	{
 		if (dataSet == null || analyzer == null)
 		{
 			JOptionPane.showMessageDialog(this, "Please load a CSV first.");
-	        return;
+			return;
 		}
 
 		String yText = yearField.getText().trim();
-	    String mText = monthField.getText().trim();
-	    String tText = thresholdField.getText().trim();
-	    
-	    if (yText.isEmpty() || mText.isEmpty() || tText.isEmpty()) {
-	        JOptionPane.showMessageDialog(this,
-	                "Please fill in Year, Month, and Threshold.");
-	        return;
-	    }
-		
-	    try {
-	        int year = Integer.parseInt(yText);
-	        int month = Integer.parseInt(mText);
-	        double threshold = Double.parseDouble(tText);
+		String mText = monthField.getText().trim();
+		String tText = thresholdField.getText().trim();
 
-	        if (month < 1 || month > 12) {
-	            JOptionPane.showMessageDialog(this,
-	                    "Month must be between 1 and 12.");
-	            return;
-	        }
+		if (yText.isEmpty() || mText.isEmpty() || tText.isEmpty())
+		{
+			JOptionPane.showMessageDialog(this,
+					"Please fill in Year, Month, and Threshold.");
+			return;
+		}
+
+		try
+		{
+			int year = Integer.parseInt(yText);
+			int month = Integer.parseInt(mText);
+			double threshold = Double.parseDouble(tText);
+
+			if (month < 1 || month > 12)
+			{
+				JOptionPane.showMessageDialog(this,
+						"Month must be between 1 and 12.");
+				return;
+			}
 
 			HeatSummary summary = analyzer.summarizeFor(year, month, threshold);
 
 			tableModel.setRowCount(0);
-	        for (String[] row : summary.tableRows) {
-	            tableModel.addRow(row);
-	        }
+			for (String[] row : summary.tableRows)
+			{
+				tableModel.addRow(row);
+			}
 
-	        summaryLabel.setText(String.format(
-	                "Year %d, Month %d, Threshold %.1f | Days: %d, Heat days: %d, "
-	                        + "Avg HI: %.1f, Max HI: %.1f, Longest streak: %d "
-	                        + "| Skipped rows in file: %d",
-	                year, month, threshold,
-	                summary.totalDays, summary.heatDayCount,
-	                summary.averageHeatIndex, summary.maxHeatIndex,
-	                summary.longestStreak,
-	                dataSet.getSkippedRowCount()));
-
+			summaryLabel.setText(String.format(
+					"Year %d, Month %d, Threshold %.1f | Days: %d, Heat days: %d, "
+							+ "Avg HI: %.1f, Max HI: %.1f, Longest streak: %d "
+							+ "| Skipped rows in file: %d",
+					year, month, threshold, summary.totalDays,
+					summary.heatDayCount, summary.averageHeatIndex,
+					summary.maxHeatIndex, summary.longestStreak,
+					dataSet.getSkippedRowCount()));
 		}
-	    catch (NumberFormatException ex) {
-	        JOptionPane.showMessageDialog(this, "Year, Month, and Threshold must be valid numbers.");
-	    }
+		catch (NumberFormatException ex)
+		{
+			JOptionPane.showMessageDialog(this,
+					"Year, Month, and Threshold must be valid numbers.");
+		}
 	}
 
+	// Export a summary.txt report for the current filters
 	private void onExport(ActionEvent e)
 	{
 		if (dataSet == null || analyzer == null)
@@ -245,51 +259,55 @@ public class HeatRiskGUI extends JFrame
 			JOptionPane.showMessageDialog(this, "Nothing to export yet.");
 			return;
 		}
-		
+
 		String yText = yearField.getText().trim();
-	    String mText = monthField.getText().trim();
-	    String tText = thresholdField.getText().trim();
-	    
-	    if (yText.isEmpty() || mText.isEmpty() || tText.isEmpty()) {
-	        JOptionPane.showMessageDialog(this,
-	                "Please fill in Year, Month, and Threshold before exporting.");
-	        return;
-	    }
+		String mText = monthField.getText().trim();
+		String tText = thresholdField.getText().trim();
 
-	    try {
-	        int year = Integer.parseInt(yText);
-	        int month = Integer.parseInt(mText);
-	        double threshold = Double.parseDouble(tText);
+		if (yText.isEmpty() || mText.isEmpty() || tText.isEmpty())
+		{
+			JOptionPane.showMessageDialog(this,
+					"Please fill in Year, Month, and Threshold before exporting.");
+			return;
+		}
 
-	        if (month < 1 || month > 12) {
-	            JOptionPane.showMessageDialog(this,
-	                    "Month must be between 1 and 12.");
-	            return;
-	        }
+		try
+		{
+			int year = Integer.parseInt(yText);
+			int month = Integer.parseInt(mText);
+			double threshold = Double.parseDouble(tText);
 
-	        boolean usePercentile = false;
-	        HeatSummary summary =
-	                analyzer.summarizeFor(year, month, threshold);
+			if (month < 1 || month > 12)
+			{
+				JOptionPane.showMessageDialog(this,
+						"Month must be between 1 and 12.");
+				return;
+			}
 
-	        JFileChooser chooser = new JFileChooser();
-	        chooser.setSelectedFile(new java.io.File("summary.txt"));
-	        int result = chooser.showSaveDialog(this);
-	        if (result != JFileChooser.APPROVE_OPTION) return;
+			HeatSummary summary = analyzer.summarizeFor(year, month, threshold);
 
-	        Path path = chooser.getSelectedFile().toPath();
-	        new ReportWriter().write(path, summary, year, month, threshold);
+			JFileChooser chooser = new JFileChooser();
+			chooser.setSelectedFile(new java.io.File("summary.txt"));
+			int result = chooser.showSaveDialog(this);
+			if (result != JFileChooser.APPROVE_OPTION) return;
 
-	        JOptionPane.showMessageDialog(this,
-	                "Exported to: " + path.toAbsolutePath());
+			Path path = chooser.getSelectedFile().toPath();
+			new ReportWriter().write(path, summary, year, month, threshold);
 
-	    } catch (NumberFormatException ex) {
-	        JOptionPane.showMessageDialog(this,
-	                "Year, Month, and Threshold must be valid numbers.");
-	    } catch (Exception ex) {
-	        JOptionPane.showMessageDialog(this,
-	                "Error exporting: " + ex.getMessage(),
-	                "Export Error", JOptionPane.ERROR_MESSAGE);
-	    }
+			JOptionPane.showMessageDialog(this,
+					"Exported to: " + path.toAbsolutePath());
+		}
+		catch (NumberFormatException ex)
+		{
+			JOptionPane.showMessageDialog(this,
+					"Year, Month, and Threshold must be valid numbers.");
+		}
+		catch (Exception ex)
+		{
+			JOptionPane.showMessageDialog(this,
+					"Error exporting: " + ex.getMessage(), "Export Error",
+					JOptionPane.ERROR_MESSAGE);
+		}
 	}
 
 	public static void main(String[] args)

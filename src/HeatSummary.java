@@ -25,6 +25,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+// Stores the results after analyzing a specific month.
 public class HeatSummary
 {
 	public int totalDays;
@@ -32,13 +33,18 @@ public class HeatSummary
 	public int heatDayCount;
 	public double averageHeatIndex;
 	public double maxHeatIndex;
+
+	// Longest run of consecutive heat days
 	public int longestStreak;
 	public LocalDate streakStart, streakEnd;
-	
-	// New GUI with report friendly rows
-    public final List<String[]> tableRows = new ArrayList<>();
 
-    public void addRow(String date, String maxT, String hum, String hi, String flag) {
-        tableRows.add(new String[]{ date, maxT, hum, hi, flag });
-    }
+	// GUI table rows: {date, maxTemp, humidity, heatIndex, heatDayFlag}
+	public final List<String[]> tableRows = new ArrayList<>();
+
+	// Adds one row to the table output
+	public void addRow(String date, String maxT, String hum, String hi,
+			String flag)
+	{
+		tableRows.add(new String[] { date, maxT, hum, hi, flag });
+	}
 }

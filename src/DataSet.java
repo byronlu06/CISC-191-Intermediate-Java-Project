@@ -29,33 +29,25 @@ import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.function.Predicate;
 
-/**
- * Holds a list of WeatherRecord rows loaded from a CSV file.
- * Provides read only access and simple filtering.
- */
+// Loads weather data from a CSV and stores it as WeatherRecord objects.
+// Also keeps track of how many rows were skipped due to bad formatting.
 public class DataSet
 {
-
-	private static final int EXPECTED_COLUMNS = 4; // date, maxTemp, minTemp,
-													// humidityPercent
+	// CSV columns: date, maxTemp, minTemp, humidityPercent
+	private static final int EXPECTED_COLUMNS = 4;
 
 	private final List<WeatherRecord> records = new ArrayList<>();
 	private int skippedRowCount = 0;
 
-	/**
-	 * Load weather data from a CSV with a single header row.
-	 * Expected columns: date, maxTemp, minTemp, humidityPercent
-	 */
+	// Reads a CSV with 1 header row and returns a DataSet.
 	public static DataSet loadFromCsv(Path csvPath) throws IOException
 	{
 		DataSet dataSet = new DataSet();
 
 		try (BufferedReader reader = Files.newBufferedReader(csvPath))
 		{
-			String line;
-
-			// Skip the header
-			line = reader.readLine();
+			// Skip header
+			String line = reader.readLine();
 			if (line == null)
 			{
 				// Empty file
@@ -67,7 +59,7 @@ public class DataSet
 			{
 				String[] cols = line.split(",", -1); // keep empty strings
 
-				// Basic shape check
+				// Make sure row has enough columns
 				if (cols.length < EXPECTED_COLUMNS)
 				{
 					dataSet.skippedRowCount++;
@@ -86,7 +78,7 @@ public class DataSet
 				}
 				catch (NumberFormatException | DateTimeParseException e)
 				{
-					// Bad number or date format skip this row but keep going
+					// Bad row -> skip it, keep going
 					dataSet.skippedRowCount++;
 				}
 			}
@@ -95,17 +87,13 @@ public class DataSet
 		return dataSet;
 	}
 
-	/**
-	 * Returns an unmodifiable view of all records.
-	 */
+	// All records (read-only view)
 	public List<WeatherRecord> all()
 	{
 		return Collections.unmodifiableList(records);
 	}
 
-	/**
-	 * Returns a new list with only the records that pass the given test.
-	 */
+	// Returns only records that match the predicate
 	public List<WeatherRecord> filter(Predicate<WeatherRecord> test)
 	{
 		List<WeatherRecord> result = new ArrayList<>();
@@ -119,9 +107,7 @@ public class DataSet
 		return result;
 	}
 
-	/**
-	 * Number of CSV rows that were skipped due to errors.
-	 */
+	// How many rows were skipped when loading the CSV
 	public int getSkippedRowCount()
 	{
 		return skippedRowCount;

@@ -24,6 +24,7 @@
 import java.io.*;
 import java.nio.file.*;
 
+// Writes the analysis results to a text file.
 public class ReportWriter
 {
 	public void write(Path out, HeatSummary s, int year, int month, double threshold) throws IOException
@@ -32,20 +33,24 @@ public class ReportWriter
 		{
 			bw.write("Heat Risk Summary\n");
 			bw.write("Year: " + year + " Month: " + month + " Threshold: " + threshold + "\n\n");
+
 			bw.write("Total Days: " + s.totalDays + "\n");
 			bw.write("Heat-Day Count: " + s.heatDayCount + "\n");
 			bw.write("Average HI: " + String.format("%.1f", s.averageHeatIndex) + "\n");
 			bw.write("Max HI: " + String.format("%.1f", s.maxHeatIndex) + "\n");
 			bw.write("Longest Streak: " + s.longestStreak + "\n");
-			
-			// New simple table with date, maxtemp, HI, heatday
-			if (!s.tableRows.isEmpty()) {
-                bw.write("Date       , Max Temp, Humidity , Heat Index  , HeatDay\n");
-                for (String[] row : s.tableRows) {
-                    bw.write(String.format("%-10s, %4s, %3s%%, %4s, %s%n",
-                            row[0], row[1], row[2], row[3], row[4]));
-                }
-            }
+
+			// Per-day table
+			if (!s.tableRows.isEmpty())
+			{
+				bw.write("Date       , Max Temp, Humidity , Heat Index  , HeatDay\n");
+				for (String[] row : s.tableRows)
+				{
+					bw.write(String.format("%-10s, %4s, %3s%%, %4s, %s%n",
+							row[0], row[1], row[2], row[3], row[4]));
+				}
+			}
 		}
 	}
 }
+

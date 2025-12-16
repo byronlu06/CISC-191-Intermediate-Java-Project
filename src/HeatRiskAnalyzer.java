@@ -27,76 +27,71 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Runs heat risk calculations on a DataSet
- * Filters by year/month, then computes summary statistics
- */
+// Does the actual analysis work: filtering + stats + streaks.
 public class HeatRiskAnalyzer
 {
-
 	private final DataSet dataSet;
-	private int minRunDays = 3; // used for future streak/run rules if needed
+
+	// Not heavily used right now, but kept in case you add run rules later
+	private int minRunDays = 3;
 
 	public HeatRiskAnalyzer(DataSet dataSet)
 	{
 		this.dataSet = dataSet;
 	}
 
-	/**
-	 * Set the minimum run length for streak related logic
-	 */
+	// Sets min run length (future use)
 	public void setMinRunDays(int days)
 	{
 		this.minRunDays = Math.max(1, days);
 	}
-	
-	// Filter and summarize in one call
-	public HeatSummary summarizeFor(int year, int month, double threshold) {
-        List<WeatherRecord> days = filter(year, month);
-        HeatSummary s = summarize(days, threshold);
-        prepareRows(days, threshold, s);
-        return s;
-    }
 
-	/**
-	 * Return all records for the given year and month.
-	 */
+	// GUI helper: filter + summarize + fill table rows
+	public HeatSummary summarizeFor(int year, int month, double threshold)
+	{
+		List<WeatherRecord> days = filter(year, month);
+		HeatSummary s = summarize(days, threshold);
+		prepareRows(days, threshold, s);
+		return s;
+	}
+
+	// Returns all records for a given year/month
 	public List<WeatherRecord> filter(int year, int month)
 	{
-		return dataSet.filter(r -> r.getDate().getYear() == year && r.getDate().getMonthValue() == month);
+		return dataSet.filter(r -> r.getDate().getYear() == year
+				&& r.getDate().getMonthValue() == month);
 	}
-	
-	// Fill the heat summary table rows for GUI reports
-	public void prepareRows(List<WeatherRecord> days, double threshold, HeatSummary out) {
-        out.tableRows.clear();
-        for (WeatherRecord rec : days) {
-            String date = rec.getDate().toString();
-            String maxT = String.format("%.1f", rec.getMaxTemp());
-            String hum  = String.format("%.0f", rec.getHumidityPercent());
-            double hiVal = rec.heatIndex();
-            String hi   = String.format("%.1f", hiVal);
-            String flag = rec.isHeatDay(threshold) ? "Yes" : "No";
-            out.addRow(date, maxT, hum, hi, flag);
-        }
-    }
 
-	/**
-	 * Compute summary metrics for the given records.
-	 * 
-	 * @param dayList       days to analyze
-	 * @param threshold     Heat Index threshold for a "heat day"
-	 * @param usePercentile if true, also compute p90 values
-	 */
+	// Builds rows for the GUI table (all strings)
+	public void prepareRows(List<WeatherRecord> days, double threshold,
+			HeatSummary out)
+	{
+		out.tableRows.clear();
+
+		for (WeatherRecord rec : days)
+		{
+			String date = rec.getDate().toString();
+			String maxT = String.format("%.1f", rec.getMaxTemp());
+			String hum = String.format("%.0f", rec.getHumidityPercent());
+
+			double hiVal = rec.heatIndex();
+			String hi = String.format("%.1f", hiVal);
+
+			String flag = rec.isHeatDay(threshold) ? "Yes" : "No";
+			out.addRow(date, maxT, hum, hi, flag);
+		}
+	}
+
+	// Computes the main summary numbers (avg/max/count + longest streak)
 	public HeatSummary summarize(List<WeatherRecord> dayList, double threshold)
 	{
-
 		HeatSummary summary = new HeatSummary();
 		summary.totalDays = dayList.size();
-		// skippedRowCount is tracked at file load time; surface separately in
-		// UI
+
+		// Skipped rows are tracked by DataSet (GUI reads it from there)
 		summary.skippedRowCount = 0;
 
-		// basic stats (avg HI, max HI, heat-day count)
+		// Metric 1: averages/max + heat day count
 		Metric basicStats = (records, thr, run, out) -> {
 			if (records.isEmpty())
 			{
@@ -105,6 +100,7 @@ public class HeatRiskAnalyzer
 				out.heatDayCount = 0;
 				return;
 			}
+
 			double sumHI = 0;
 			double maxHI = Double.NEGATIVE_INFINITY;
 			int heatDayCount = 0;
@@ -113,15 +109,17 @@ public class HeatRiskAnalyzer
 			{
 				double hi = rec.heatIndex();
 				sumHI += hi;
+
 				if (hi > maxHI) maxHI = hi;
 				if (rec.isHeatDay(thr)) heatDayCount++;
 			}
+
 			out.averageHeatIndex = sumHI / records.size();
 			out.maxHeatIndex = maxHI;
 			out.heatDayCount = heatDayCount;
 		};
 
-		// longest heat streak (consecutive heat days)
+		// Metric 2: longest streak of heat days
 		Metric longestStreak = (records, thr, run, out) -> {
 			int current = 0, best = 0;
 			LocalDate currentStart = null, bestStart = null, bestEnd = null;
@@ -132,6 +130,7 @@ public class HeatRiskAnalyzer
 				{
 					if (current == 0) currentStart = rec.getDate();
 					current++;
+
 					if (current > best)
 					{
 						best = current;
@@ -144,17 +143,17 @@ public class HeatRiskAnalyzer
 					current = 0;
 				}
 			}
+
 			out.longestStreak = best;
 			out.streakStart = bestStart;
 			out.streakEnd = bestEnd;
 		};
 
-		// Build the list of metric steps to run
+		// Run all metrics
 		List<Metric> steps = new ArrayList<>();
 		steps.add(basicStats);
 		steps.add(longestStreak);
 
-		// Execute all metrics in order
 		for (Metric m : steps)
 		{
 			m.compute(dayList, threshold, minRunDays, summary);

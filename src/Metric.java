@@ -24,6 +24,7 @@
 
 import java.util.List;
 
+// A metric is one analysis step that writes results into HeatSummary.
 @FunctionalInterface
 public interface Metric
 {
